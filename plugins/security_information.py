@@ -1,63 +1,51 @@
-from core.information_center import InformationCenter
 from abc import ABC, abstractmethod
 
 
 class SecurityInformation(ABC):
+
+    _REGISTRY = []
+
+    def __init_subclass__(cls, **kwargs):
+        # Instantiates the subclass first.
+        super().__init_subclass__(**kwargs)
+        # Adds the instance of the subclass into the registry.
+        SecurityInformation._REGISTRY.append(cls)    
+
+    @classmethod
+    def deregister(cls, sub_cls):
+        if sub_cls in cls.__subclasses__:
+            cls._REGISTRY.remove(sub_cls)
+            # put logging here for class that was removed
+            return
+        # put logging message here for class not in subclasses
     
-
-    @abstractmethod
-    def get_security_health(self):
-        pass
-
-    @abstractmethod
-    def get_security_abnormalities(self):
-        pass
-
-    @abstractmethod
-    def get_security_logs(self):
-        pass
-
-    @abstractmethod
-    def get_security_status(self):
-        pass
-
-
+    @classmethod
+    def get_registered(cls):
+        return list(cls._REGISTRY)
+    
 
 class SecurityHealth(SecurityInformation):
     
-
-    def __init__(self):
-        super().__init__()
-    
     def get_security_health(self):
-        pass
-
+        return []
+    
 
 class SecurityLogs(SecurityInformation):
-    
-
-    def __init__(self):
-        super().__init__()
 
     def get_security_logs(self):
-        pass
+        return []
 
 
 class SecurityStatus(SecurityInformation):
-    
-
-    def __init__(self):
-        super().__init__()
 
     def get_security_status(self):
-        pass
+        return []
 
 
 class SecurityAbnormalities(SecurityInformation):
-    
-
-    def __init__(self):
-        super().__init__()
 
     def get_security_abnormalities(self):
-        pass
+        # unique values
+        # unusually high
+        # unusually low
+        return []

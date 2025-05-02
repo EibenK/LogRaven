@@ -1,63 +1,51 @@
-from core.information_center import InformationCenter
 from abc import ABC, abstractmethod
 
 
 class SystemInformation(ABC):
     
+    _REGISTRY = []
 
-    @abstractmethod
-    def get_system_health(self):
-        pass
+    def __init_subclass__(cls, **kwargs):
+        # Instantiates the subclass first.
+        super().__init_subclass__(**kwargs)
+        # Adds the instance of the subclass into the registry.
+        SystemInformation._REGISTRY.append(cls)
 
-    @abstractmethod
-    def get_system_abnormalities(self):
-        pass
+    @classmethod
+    def deregister(cls, sub_cls):
+        if sub_cls in cls.__subclasses__:
+            cls._REGISTRY.remove(sub_cls)
+            # put logging here for class that was removed
+            return
+        # put logging message here for class not in subclasses
 
-    @abstractmethod
-    def get_system_logs(self):
-        pass
-
-    @abstractmethod
-    def get_system_status(self):
-        pass
-
+    @classmethod
+    def get_registered(cls):
+        return list(cls._REGISTRY)
 
 
 class SystemHealth(SystemInformation):
     
-
-    def __init__(self):
-        super().__init__()
-    
     def get_system_health(self):
-        pass
+        return []
 
 
 class SystemLogs(SystemInformation):
     
-
-    def __init__(self):
-        super().__init__()
-
     def get_system_logs(self):
-        pass
+        return []
 
 
 class SystemStatus(SystemInformation):
     
-
-    def __init__(self):
-        super().__init__()
-
     def get_system_status(self):
-        pass
+        return []
 
 
 class SystemAbnormalities(SystemInformation):
     
-
-    def __init__(self):
-        super().__init__()
-
     def get_system_abnormalities(self):
-        pass
+        # unique values
+        # unusually high
+        # unusually low
+        return []

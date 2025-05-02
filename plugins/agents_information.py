@@ -1,63 +1,51 @@
-from core.information_center import InformationCenter
 from abc import ABC, abstractmethod
 
 
 class AgentsInformation(ABC):
-    
 
-    @abstractmethod
-    def get_agents_health(self):
-        pass
+    _REGISTRY = []
 
-    @abstractmethod
-    def get_agents_abnormalities(self):
-        pass
+    def __init_subclass__(cls, **kwargs):
+        # Instantiates the subclass first.
+        super().__init_subclass__(**kwargs)
+        # Adds the instance of the subclass into the registry.
+        AgentsInformation._REGISTRY.append(cls)
+        
+    @classmethod
+    def deregister(cls, sub_cls):
+        if sub_cls in cls.__subclasses__:
+            cls._REGISTRY.remove(sub_cls)
+            # put logging here for class that was removed
+            return
+        # put logging message here for class not in subclasses
 
-    @abstractmethod
-    def get_agents_logs(self):
-        pass
-
-    @abstractmethod
-    def get_agents_status(self):
-        pass
-
+    @classmethod
+    def get_registered(cls):
+        return list(cls._REGISTRY)
 
 
 class AgentsHealth(AgentsInformation):
     
-
-    def __init__(self):
-        super().__init__()
-    
     def get_agents_health(self):
-        pass
+        return []
 
 
 class AgentsLogs(AgentsInformation):
-    
-
-    def __init__(self):
-        super().__init__()
 
     def get_agents_logs(self):
-        pass
+        return []
 
 
 class AgentsStatus(AgentsInformation):
-    
-
-    def __init__(self):
-        super().__init__()
 
     def get_agents_status(self):
-        pass
+        return []
 
 
 class AgentsAbnormalities(AgentsInformation):
-    
-
-    def __init__(self):
-        super().__init__()
 
     def get_agents_abnormalities(self):
-        pass
+        # unique values
+        # unusually high
+        # unusually low
+        return []

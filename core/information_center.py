@@ -3,18 +3,18 @@ from plugins.system_information import SystemInformation
 from plugins.security_information import SecurityInformation
 
 class InformationCenter():
-    """ Class for Log Aggregation Using Registry/Abstract Method Patterns """
+    def __init__(self):
+        self.registered = []
 
-    _REGISTRY = []
+    def get_registered(self):
+        registeries = [
+            AgentsInformation.get_registered(),
+            SystemInformation.get_registered(),
+            SecurityInformation.get_registered()
+        ]
 
-    def __init_subclass__(cls, **kwargs):
-        # Instantiates the subclass first.
-        super().__init_subclass__(**kwargs)
-        # Adds the instance of the subclass into the registry.
-        InformationCenter._REGISTRY.append(cls)
-
-    @classmethod
-    def deregister(cls):
-        if cls in InformationCenter.__subclasses__():
-            InformationCenter._REGISTRY.remove(cls)
-    
+        for registry in registeries:
+            for cls in registry:
+                self.registered.append(cls())
+        return self.registered
+        

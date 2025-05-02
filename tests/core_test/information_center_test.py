@@ -3,10 +3,13 @@ import unittest
 class InformationCenterTest(unittest.TestCase):
     
 
-    def test_subclass_registration(self):
+    def subclass_registration_test(self):
         pass
 
-    def test_subclass_deregistration(self):
+    def subclass_deregistration_test(self):
+        pass
+
+    def get_registration_test(self):
         pass
 
 if __name__ == "__main__":
