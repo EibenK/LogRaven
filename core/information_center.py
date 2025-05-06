@@ -1,6 +1,6 @@
-from plugins.agents_information import AgentsInformation
-from plugins.system_information import SystemInformation
-from plugins.security_information import SecurityInformation
+from plugins.agents_information import AgentServicesInformation
+from plugins.system_information import SystemServicesInformation
+from plugins.security_information import SecurityServicesInformation
 
 class InformationCenter():
     def __init__(self):
@@ -8,9 +8,9 @@ class InformationCenter():
 
     def get_registered(self):
         registeries = [
-            AgentsInformation.get_registered(),
-            SystemInformation.get_registered(),
-            SecurityInformation.get_registered()
+            AgentServicesInformation.get_registered(),
+            SystemServicesInformation.get_registered(),
+            SecurityServicesInformation.get_registered()
         ]
 
         for registry in registeries:

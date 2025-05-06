@@ -9,13 +9,23 @@ to be able to create cross-referencing between log types allowing more validatio
 ## Features
 Current:
 - Setup of file structure
-- Ingestion of logs
-- Log storage
+- Log ingestion architecture
+- MVCS design structure
+- Observer/Registry design pattern
+- Orchestrator design pattern
+- Dataclasses for log collectors
+- Internal logging
+- Base Unittests
+- 
 
-In-progress: 
-- Deploy-able on three different types of environments: cloud, docker and on-premise(localized)
-- Searching within log storage for specific events
+In-progress:
+- Sending logs into analyzer for grading and cross referencing
+- Determining how to grade and analyze logs depending on HEALTH, ABNORMALITIES and VULNs
+- Analyzer class structure
+- connecting my analyzer to my UI structure through the information center
 
 Future:
+- Using AI to grade the severity of the cross referenced logs
 - RESTFUL API integration
-- TBD
+- Deploy-able on three different types of environments: cloud, docker and on-premise(localized)
+- Searching within log storage for specific events

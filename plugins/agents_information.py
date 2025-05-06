@@ -1,92 +1,105 @@
+import logging
+import time
+import win32evtlog
 import wmi
-from abc import ABC, abstractmethod
+
+from abc import ABC
+from dataclasses import dataclass
+
+logger = logging.getLogger(__name__)
 
 
-class AgentsInformation(ABC):
+@dataclass
+class AgentService:
+    name: str
+    status: str
+    logs: list
+
+
+class AgentServicesInformation(ABC):
 
     _REGISTRY = []
     _AGENTS = []
+    _INIT_DONE = False
 
     def __init__(self):
+        # if first instantiation set, then return
+        if AgentServicesInformation._INIT_DONE:
+            return
         c = wmi.WMI()
+        # performance test start
+        start = time.time()
         for service in c.Win32_Service():
             if "agent" in service.DisplayName.lower():
                 # store as set to refrain from getting duplicates
-                self._AGENTS.append((service.Name, service.State))
+                agent = AgentService(
+                    name=service.Name,
+                    status=service.State,
+                    logs=[],
+                )
+                self.__class__.acquire_logs(agent)
+                self._AGENTS.append(agent)
+        # performance test end and logged
+        end = time.time()
+        logger.info(f"duration to get agent services: {end - start}")
+        # will set after first instantiation
+        AgentServicesInformation._INIT_DONE = True
+
+    @classmethod
+    def acquire_logs(cls, agent):
+        aggregator = []
+        for subcls in cls._REGISTRY:
+            logger.info(f"acquiring logs from {subcls().__name__}")
+            aggregator.append(subcls().acquire_logs(agent))
+        agent.logs = aggregator
+
+    ''' Register Methods '''
 
     def __init_subclass__(cls, **kwargs):
         # Instantiates the subclass first.
         super().__init_subclass__(**kwargs)
         # Adds the instance of the subclass into the registry.
-        AgentsInformation._REGISTRY.append(cls)
+        AgentServicesInformation._REGISTRY.append(cls)
+        logger.debug(f"registered subclass: {cls.__name__}")
 
     @classmethod
     def deregister(cls, sub_cls):
-        if sub_cls in cls.__subclasses__:
+        if sub_cls in cls._REGISTRY:
             cls._REGISTRY.remove(sub_cls)
-            # put logging here for class that was removed
+            logger.debug(f"deregistered subclass: {sub_cls.__name__}")
             return
-        # put logging message here for class not in subclasses
 
     @classmethod
     def get_registered(cls) -> list:
+        logger.debug(f"returning list of registered classes: {cls._REGISTRY}")
         return list(cls._REGISTRY)
 
-    @abstractmethod
-    def get_metadata() -> list:
-        pass
 
-    @abstractmethod
-    def get_log_type() -> str:
-        pass
+class AgentServiceLogFinder(AgentServicesInformation):
+    # focused on getting information around the agents logs
+    def acquire_logs(agent_obj):
+        win_evnt_handlers = {
+            "Application": win32evtlog.OpenEventLog('localhost', 'Application'),
+            "System": win32evtlog.OpenEventLog('localhost', 'System'),
+            "Security": win32evtlog.OpenEventLog('localhost', 'Security'),
+        }
 
+        flags = win32evtlog.EVENTLOG_BACKWARDS_READ | win32evtlog.EVENTLOG_SEQUENTIAL_READ
 
-class AgentsHealth(AgentsInformation):
-
-    def get_agents_health(self) -> list:
-        return []
-
-    def get_metadata() -> list:
-        return []
-
-    def get_log_type() -> str:
-        return "focused"
-
-
-class AgentsLogs(AgentsInformation):
-
-    def get_agents_logs(self) -> list:
-        return []
-
-    def get_metadata() -> list:
-        return []
-
-    def get_log_type() -> str:
-        return "focused"
-
-
-class AgentsStatus(AgentsInformation):
-
-    def get_agents_status(self) -> str:
-        return "healthy"
-
-    def get_metadata() -> list:
-        return []
-
-    def get_log_type() -> str:
-        return "focused"
-
-
-class AgentsAbnormalities(AgentsInformation):
-
-    def get_agents_abnormalities(self) -> list:
-        # unique values
-        # unusually high
-        # unusually low
-        return []
-
-    def get_metadata() -> list:
-        return []
-
-    def get_log_type() -> str:
-        return "focused"
+        for logtype, handle in win_evnt_handlers.items():
+            try:
+                while True:
+                    events = win32evtlog.ReadEventLog(handle, flags, 0)
+                    if not events:
+                        break
+                    for event in events:
+                        source = str(event.SourceName).lower()
+                        if "agent" in source:
+                            log_entry = {
+                                "source": event.SourceName,
+                                "timestamp": event.TimeGenerated.Format(),
+                                "message": event.StringInserts
+                            }
+                            agent_obj.logs.append(log_entry)
+            except Exception as e:
+                logger.error(f"error reading {logtype} log: {e}")
