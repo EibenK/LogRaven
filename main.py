@@ -17,9 +17,13 @@ logger = logging.getLogger(__name__)
 class Main:
     def __init__(self):
         app = QApplication(sys.argv)
+
+        # instantiates orchestrator
         info_center = InformationCenter()
         services = info_center.get_services()
+        # monitors log finders for new acquisitions
         info_center.start_monitoring()
+        
 
         window = MainWindow()
         window.show()
