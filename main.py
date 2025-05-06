@@ -18,7 +18,8 @@ class Main:
     def __init__(self):
         app = QApplication(sys.argv)
         info_center = InformationCenter()
-        registeries = info_center.get_registered()
+        services = info_center.get_services()
+        info_center.start_monitoring()
 
         window = MainWindow()
         window.show()
