@@ -1,10 +1,11 @@
 import logging
 import sys
 from PyQt5.QtGui import QGuiApplication
+from PyQt5 .QtCore import Qt
 from PyQt5.QtWidgets import (
     QLabel, QApplication, QMainWindow, QWidget, QVBoxLayout,
-    QHBoxLayout, QPushButton, QStackedWidget, QTabWidget, 
-    QTableWidget, QCheckBox, QProgressBar
+    QHBoxLayout, QPushButton, QTabWidget, QCheckBox, QFrame,
+    QSpacerItem, QSizePolicy
 )
 
 logger = logging.getLogger(__name__)
@@ -78,9 +79,60 @@ class MainWindow(QMainWindow):
 class DashboardPage(QWidget):
     def __init__(self):
         super().__init__()
+        main_layout = QVBoxLayout()
+        verticalSpacer = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
+
+        diagnostics_title_row = QHBoxLayout()
+        diagnostics_title_row.addWidget(InfoBox("Diagnostics"))
+
+        diagnostics_row = QHBoxLayout()
+        diagnostics_row.addWidget(InfoBox("0"))
+        diagnostics_row.addWidget(InfoBox("0"))
+        diagnostics_row.addWidget(InfoBox("0"))
+        diagnostics_row.addWidget(InfoBox("0"))
+        diagnostics_row.addWidget(InfoBox("0"))
+        diagnostics_row.addWidget(InfoBox("0"))
+        
+        sys_info_title_row = QHBoxLayout()
+        sys_info_title_row.addWidget(InfoBox("System Status"))
+        sys_info_title_row.addWidget(InfoBox("Events"))
+        sys_info_title_row.addWidget(InfoBox("Agent Count"))
+
+        sys_info_row = QHBoxLayout()
+        sys_info_row.addWidget(InfoBox("0"))
+        sys_info_row.addWidget(InfoBox("0"))
+        sys_info_row.addWidget(InfoBox("0"))
+        
+
+        main_layout.addLayout(diagnostics_title_row)
+        main_layout.addLayout(diagnostics_row)
+        main_layout.addItem(verticalSpacer)
+        main_layout.addLayout(sys_info_title_row)
+        main_layout.addLayout(sys_info_row)
+        main_layout.addItem(verticalSpacer)
+        self.setLayout(main_layout)
+
+class InfoBox(QFrame):
+    # I want to add customizable parameters here 
+    def __init__(self, title="Title", bg_color="#f0f0f0"):
+        super().__init__()
+        self.setFrameStyle(QFrame.StyledPanel)
+        self.setMaximumHeight(80)
+        self.setStyleSheet(f"""
+            QFrame {{
+                border-radius: 8px;
+                background-color: {bg_color};
+                padding: 10px;
+            }}
+        """)
         layout = QVBoxLayout()
-        layout.addWidget(QLabel("Welcome to Lograven Dashboard"))
+        content_info = QLabel(f"<b>{title}</b>")
+        content_info.setAlignment(Qt.AlignCenter)
+        layout.addWidget(content_info)
+        layout.setContentsMargins(5, 5, 5, 5)
+        layout.setSpacing(2)
         self.setLayout(layout)
+
 
 class SettingsPage(QWidget):
     def __init__(self):
