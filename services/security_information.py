@@ -1,57 +1,63 @@
 import logging
+import threading
 import time
 import win32evtlog
 import wmi
 
-from abc import ABC
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
 logger = logging.getLogger(__name__)
 
 
 @dataclass
-class AgentService:
+class SecurityService:
     name: str
     status: str
     logs: list
 
 
-class AgentServicesInformation(ABC):
+class SecurityServicesInformation(ABC):
 
+    _SERVICES = []
     _REGISTRY = []
-    _AGENTS = []
+    _READY_EVENT = threading.Event()
     _INIT_DONE = False
 
     def __init__(self):
-        # if first instantiation set, then return
-        if AgentServicesInformation._INIT_DONE:
+        if SecurityServicesInformation._INIT_DONE:
             return
         c = wmi.WMI()
         # performance test start
         start = time.time()
         for service in c.Win32_Service():
-            if "agent" in service.DisplayName.lower():
+            if "security" in service.DisplayName.lower():
                 # store as set to refrain from getting duplicates
-                agent = AgentService(
+                security_service = SecurityService(
                     name=service.Name,
                     status=service.State,
                     logs=[],
                 )
-                self.__class__.acquire_logs(agent)
-                self._AGENTS.append(agent)
+                self.__class__.acquire_logs(security_service)
+                self._SERVICES.append(security_service)
         # performance test end and logged
         end = time.time()
-        logger.info(f"duration to get agent services: {end - start}")
+        logger.info(f"duration to get security services: {end - start:.2f}")
         # will set after first instantiation
-        AgentServicesInformation._INIT_DONE = True
+        SecurityServicesInformation._READY_EVENT.set()
+        SecurityServicesInformation._INIT_DONE = True
 
     @classmethod
-    def acquire_logs(cls, agent):
+    def wait_until_ready(cls):
+        cls._READY_EVENT.wait()
+
+    @classmethod
+    def acquire_logs(cls, security_service):
         aggregator = []
         for subcls in cls._REGISTRY:
             logger.info(f"acquiring logs from {subcls().__name__}")
-            aggregator.append(subcls().acquire_logs(agent))
-        agent.logs = aggregator
+            aggregator.append(subcls().acquire_logs(security_service))
+        security_service.logs = aggregator
 
     ''' Register Methods '''
 
@@ -59,25 +65,26 @@ class AgentServicesInformation(ABC):
         # Instantiates the subclass first.
         super().__init_subclass__(**kwargs)
         # Adds the instance of the subclass into the registry.
-        AgentServicesInformation._REGISTRY.append(cls)
+        SecurityServicesInformation._REGISTRY.append(cls)
         logger.debug(f"registered subclass: {cls.__name__}")
 
     @classmethod
     def deregister(cls, sub_cls):
-        if sub_cls in cls._REGISTRY:
+        if sub_cls in cls.__subclasses__:
             cls._REGISTRY.remove(sub_cls)
             logger.debug(f"deregistered subclass: {sub_cls.__name__}")
             return
 
     @classmethod
-    def get_registered(cls) -> list:
+    def get_registered(cls):
         logger.debug(f"returning list of registered classes: {cls._REGISTRY}")
-        return list(cls._REGISTRY)
+        return cls._REGISTRY
 
 
-class AgentServiceLogFinder(AgentServicesInformation):
-    # focused on getting information around the agents logs
-    def acquire_logs(agent_obj):
+class SecurityServiceLogFinder(SecurityServicesInformation):
+
+    # focused on getting information around the security logs
+    def acquire_logs(security_service_obj):
         win_evnt_handlers = {
             "Application": win32evtlog.OpenEventLog('localhost', 'Application'),
             "System": win32evtlog.OpenEventLog('localhost', 'System'),
@@ -91,15 +98,21 @@ class AgentServiceLogFinder(AgentServicesInformation):
                 while True:
                     events = win32evtlog.ReadEventLog(handle, flags, 0)
                     if not events:
+                        # logs alot
+                        # logger.info(f"No events in {logtype} level, security service, {security_service_obj.name}")
                         break
                     for event in events:
                         source = str(event.SourceName).lower()
-                        if "agent" in source:
+                        if "security" in source:
                             log_entry = {
                                 "source": event.SourceName,
                                 "timestamp": event.TimeGenerated.Format(),
                                 "message": event.StringInserts
                             }
-                            agent_obj.logs.append(log_entry)
+                            security_service_obj.logs.append(log_entry)
             except Exception as e:
-                logger.error(f"error reading {logtype} log: {e}")
+                print(f"error reading {logtype} log: {e}")
+
+    def monitor_services(self):
+        for service in SecurityServicesInformation._SERVICES:
+            print(service)
