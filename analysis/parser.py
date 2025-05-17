@@ -14,7 +14,7 @@ class Parser:
                 print(service.Name, "\n")
 
 if __name__ == "__main__":
-    p = Parser()
+    p = Parser([])
     
     
 

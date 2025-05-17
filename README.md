@@ -15,14 +15,14 @@ Current:
 - Orchestrator design pattern
 - Dataclasses for log collectors
 - Internal logging
-- Base Unittests
-- 
+- Base Unittests without implementation
 
 In-progress:
+- *important* I need to set up a VM to sandbox that will produce fake traffic since I am not receiving 'new' traffic from my configuration or logs
 - Sending logs into analyzer for grading and cross referencing
 - Determining how to grade and analyze logs depending on HEALTH, ABNORMALITIES and VULNs
 - Analyzer class structure
-- connecting my analyzer to my UI structure through the information center
+- Connecting my analyzer to my UI structure through the information center
 
 Future:
 - Using AI to grade the severity of the cross referenced logs
