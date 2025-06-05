@@ -92,14 +92,13 @@ class AgentServiceLogFinder(AgentServicesInformation):
         }
 
         flags = win32evtlog.EVENTLOG_BACKWARDS_READ | win32evtlog.EVENTLOG_SEQUENTIAL_READ
+        new_logs = []
 
         for logtype, handle in win_evnt_handlers.items():
             try:
                 while True:
                     events = win32evtlog.ReadEventLog(handle, flags, 0)
                     if not events:
-                        # this line logs alot
-                        # logger.info(f"No events in {logtype} level, agent service, {agent_service_obj.name}")
                         break
                     for event in events:
                         source = str(event.SourceName).lower()
@@ -109,10 +108,22 @@ class AgentServiceLogFinder(AgentServicesInformation):
                                 "timestamp": event.TimeGenerated.Format(),
                                 "message": event.StringInserts
                             }
+                            new_logs.append(log_entry)
                             agent_service_obj.logs.append(log_entry)
             except Exception as e:
                 logger.error(f"error reading {logtype} log: {e}")
+        
+        return new_logs
 
     def monitor_services(self):
+        """Monitor services and return new logs"""
+        new_logs = []
         for service in AgentServicesInformation._SERVICES:
-            print(service)
+            try:
+                # Get new logs for each service
+                service_logs = self.acquire_logs(service)
+                if service_logs:
+                    new_logs.extend(service_logs)
+            except Exception as e:
+                logger.error(f"Error monitoring service {service.name}: {e}")
+        return new_logs
